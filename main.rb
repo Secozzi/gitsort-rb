@@ -1,4 +1,4 @@
-class ForkSorter
+class BaseSorter
     def initialize(url, sort_method, per_page)
         @url = url
         @sort_method = sort_method
@@ -17,7 +17,7 @@ class ForkSorter
             m = /^(https|git)?(:\/\/|@)?([^\/:]+)[\/:](?<owner>[^\/:]+)\/(?<name>.+)(.git)?$/.match(@url)
             raise "Invalid URL" if m.nil?
 
-            # Vissa av url kommer ge en path som är längre än ett, så ta bara första elementet ur path
+            # Vissa av url kommer ge en path som har fler än ett element, så ta bara första elementet ur path
             name = m[:name].split("/").reject(&:empty?)[0]
 
             # Regexen kan inte hantera om elementet slutar på .git eller med / så ta bort dem från slutet
@@ -26,3 +26,11 @@ class ForkSorter
     end
 end
 
+class ForkSorter < BaseSorter end
+class DependenciesSorter < BaseSorter end
+class DependentSorter < BaseSorter end
+class ContributorsSorter < BaseSorter end
+# TODO:
+# Contributors - redan sorterat
+# Dependents - Web scraper (?)
+# Dependencies - Web scraper (?)

@@ -70,20 +70,23 @@ end
 
 l = ConsoleReset.new()
 l.test
-
-puts "OMEGA".center(winsize[1])
-1.upto(12) do |i|
-  puts "Hello! \n world#{i}"
-  $stdout.flush
-  STDOUT.print("\e[1A\e[1A")
-  sleep(1)
-end
 =end
 
-require "ansi/code"
-require "ansi/string"
-#puts ANSI::Code.rgb_code(12, 145, 12, true){"UWU"}
-# "48;5;34"
-l = ANSI::String.new("Hello world")
-l.ansi!("48;5;34")
-puts
+def winsize
+  require 'io/console'
+  IO.console.winsize
+end
+
+WIDTH = winsize[1]
+
+STDOUT.print("\e[?25l")
+puts " Header ".center(WIDTH, "-")
+12.downto(6) do |i|
+  puts "Hello, world#{i}!" + "\e[0K"
+  puts "H#{'e'*i}llo" + "\e[0K"
+  $stdout.flush
+  STDOUT.print("\e[2A")
+  sleep(1)
+end
+
+puts "\e[?25h"

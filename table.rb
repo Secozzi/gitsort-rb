@@ -1,11 +1,14 @@
 CLR = "\e[0K"
-UP_A_LINE = "\e[1A"
+CURS_INVIS = "\e[?25l"
+CURS_VIS = "\e[?25h"
+def UP_N_LINES(n) ; "\e[#{n}A" end
+
 
 def winsize
     require 'io/console'
     IO.console.winsize
-  end
-  
+end
+
 
 class FancyItemBase < String
     def initialize(title)
@@ -70,7 +73,8 @@ class Table
             he: "┃", hl: "┡", hr: "┩", hm: "╇"
         }
 
-        @items = [@headings, @master]
+        @top = [@headings, @master]
+        @items = []
 
         @bg = "\033[48;2;62;71;86m"
         @rt = "\033[0m"
@@ -78,7 +82,7 @@ class Table
 
     private
     def get_col(index)
-        @items.map {|row| row[index]}
+        (@top+@items).map {|row| row[index]}
     end
 
     def update_col_sizes
@@ -146,7 +150,7 @@ class Table
         )
 
         # Print rows
-        @items.drop(2).each_with_index do |row, i|
+        @items.each_with_index do |row, i|
             out_arr << get_middle(row, (i-1) % 2)
         end
 
@@ -166,6 +170,19 @@ class Table
         get_array.each do |item|
             puts item
         end
+        $stdout.flush
+    end
+
+    def clear
+        @items = []
+    end
+
+    def update_render
+        STDOUT.print("\e[10A")
+        get_array.each do |item|
+            puts item + "\e[0K"
+        end
+        $stdout.flush
     end
 end
 
@@ -173,8 +190,33 @@ def center(string, string_width, width)
     
 end
 
-t = Table.new(["A", "B"], ["Test 1", "Test 22"])
+=begin
+STDOUT.print(CURS_INVIS)
+t = Table.new(["A", "B"], ["Te1", "Te2"])
 t << ["1", "12"]
-t << ["Hello", "there"]
+t << ["Hell", "ther"]
+t << ["1", "12"]
+t << ["Hell", "ther"]
 t.render
-puts "-" * t.total_width
+
+STDOUT.print(CURS_VIS)
+g = gets.chomp
+STDOUT.print(CURS_INVIS)
+
+1.upto(10) do |i|
+    t.clear
+    t << [rand(1..10_000_000).to_s, "Stat"]
+    t << [HyperLinkItem.new("Link", "https://www.google.com"), (0...4).map { (65 + rand(26)).chr }.join]
+    t << ["1", "3"]
+    t << ["9", "2"]
+    t.update_render
+
+    print "Text: " + "\e[0K"
+    STDOUT.print(CURS_VIS)
+    g = gets.chomp
+    STDOUT.print(CURS_INVIS)
+end
+
+
+STDOUT.print(CURS_VIS)
+=end
