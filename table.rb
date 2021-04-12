@@ -168,12 +168,13 @@ class Table
     def render
         _, width = winsize
         get_array.each do |item|
-            puts item
+            puts item + "\e[0K"
         end
         $stdout.flush
     end
 
     def clear
+        STDOUT.print("\e[#{@items.length + 5}A")
         @items = []
     end
 
@@ -190,8 +191,14 @@ def center(string, string_width, width)
     
 end
 
-=begin
-STDOUT.print(CURS_INVIS)
+def get_input(message, toggle_vis = 1)
+    print message + "\e[0K"
+    STDOUT.print(CURS_VIS * toggle_vis)
+    g = gets.chomp
+    STDOUT.print(CURS_INVIS * toggle_vis)
+    STDOUT.print("\e[1A")
+end
+
 t = Table.new(["A", "B"], ["Te1", "Te2"])
 t << ["1", "12"]
 t << ["Hell", "ther"]
@@ -199,24 +206,22 @@ t << ["1", "12"]
 t << ["Hell", "ther"]
 t.render
 
-STDOUT.print(CURS_VIS)
-g = gets.chomp
 STDOUT.print(CURS_INVIS)
 
-1.upto(10) do |i|
+1.upto(3) do |i|
+    sleep(1)
     t.clear
     t << [rand(1..10_000_000).to_s, "Stat"]
     t << [HyperLinkItem.new("Link", "https://www.google.com"), (0...4).map { (65 + rand(26)).chr }.join]
     t << ["1", "3"]
     t << ["9", "2"]
-    t.update_render
+    t.render
 
     print "Text: " + "\e[0K"
     STDOUT.print(CURS_VIS)
     g = gets.chomp
     STDOUT.print(CURS_INVIS)
+    STDOUT.print("\e[1A")
 end
 
-
 STDOUT.print(CURS_VIS)
-=end
