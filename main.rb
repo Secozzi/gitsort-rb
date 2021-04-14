@@ -30,7 +30,4 @@ class ForkSorter < BaseSorter end
 class DependenciesSorter < BaseSorter end
 class DependentSorter < BaseSorter end
 class ContributorsSorter < BaseSorter end
-# TODO:
-# Contributors - redan sorterat
-# Dependents - Web scraper (?)
-# Dependencies - Web scraper (?)
+class RepositoriesSorter < BaserSorter end

@@ -1,16 +1,39 @@
 require 'optparse'
 
 
-class OldParser
-    @options = {
-        sort: "star",
-        page: 10
-    }
-
+class SortParser
     def self.parse(args)
-        option_parser = OptionParser.new do |opts|
-            opts.banner = "Usage: gitsort.rb [SORT_METHOD] [ITEMS_PER_PAGE] [SET_TOKEN]"
+        args << "--help" if args.empty?
 
+        options = {sort: "STARGAZERS", per_page: 10}
+
+        subtext = <<HELP
+Available things to sort includes:
+    forks | fork | f : Sort forks of a repository
+    dependencies | d : Sort dependencies of a repository
+    dependents   | depend : Sort depenedents of a repository
+    contributors | contrib | c : Sort contributors of a repository
+    repositories | repos   | r : Sort repositories of an user or organization
+
+See 'opt.rb COMMAND --help' for more information on a specific command.
+HELP
+
+        global = OptionParser.new do |opts|
+            opts.banner = "Usage: opt.rb [sort [options]] [ITEMS_PER_PAGE]"
+            opts.on(
+                "-p [INTEGER]",
+                "--per-page [INTEGER]",
+                Integer,
+                "Show number of items per page. Defaults to 10"
+            ) do |page|
+                options[:page] = page if page
+            end
+            opts.separator ""
+            opts.separator subtext
+        end
+
+        fork_opts = OptionParser.new do |opts|
+            opts.banner = "Usage: gitsort.rb fork [SORT_METHOD]"
             opts.on(
                 "-u [STRING]",
                 "--url [STRING]",
@@ -22,160 +45,94 @@ class OldParser
                 '-s [STRING]',
                 '--sort [STRING]',
                 String,
-                "Sort forks by method. Sort methods:",
-                "1.\tstars | star | s - sort by star count",
-                "2.\tforks | fork | f - sort by fork count",
-                "3.\tupdated | activity | up | u | a - sort by last updated",
+                "Sort repos by method. Sort methods:",
+                "1.\tName | n - Sort by name",
+                "2.\tPushed | p - Sort by push time",
+                "3.\tUpdated | u - Sort by update time",
+                "4.\tCreated | c - Sort by creation time",
+                "5.\tStars | star | s - Sort by star count",
                 "Defaults to star count."
-                ) do |sort|
+            ) do |sort|
 
                 case sort
-                when "star", "stars", "s"
-                    @options[:sort] = "stargazers"
-                when "fork", "forks", "f"
-                    @options[:sort] = "fork"
-                when "newest", "n"
-                    @options[:sort] = "newest"
+                when "name", "n"
+                    options[:sort] = "NAME"
+                when "pushed", "p"
+                    options[:sort] = "PUSHED_AT"
+                when "updated", "u"
+                    options[:sort] = "UPDATED_AT"
+                when "created", "c"
+                    options[:sort] = "CREATED_AT"
+                when "stars", "star", "s"
+                    options[:sort] = "STARGAZERS"
                 else
                     raise "Invalid sort method"
                 end
             end
+        end
 
+        contrib_opts = OptionParser.new do |opts|
+            opts.banner = "Usage: gitsort.rb contributors"
             opts.on(
-                "-p [INTEGER]",
-                "--per-page [INTEGER]",
-                Integer,
-                "Show number of items per page. Defaults to 10"
-            ) do |page|
-                @options[:page] = page if page
-            end
-
-            opts.on(
-                "--set-token [STRING]",
-                String,
-                "Set access token for listing private repositories"
+                "-r [STRING]"
             )
         end
+        
+        repo_opts = OptionParser.new do |opts|
+            opts.banner = "Usage: gitsort.rb repos [SORT_METHOD]"
+            opts.on(
+                "-u [STRING]",
+                "--user [STRING]",
+                String,
+                "Name of user or organization."
+            )
 
-        option_parser.parse(args)
-        @options
-    end
-end
+            opts.on(
+                '-s [STRING]',
+                '--sort [STRING]',
+                String,
+                "Sort repos by method. Sort methods:",
+                "1.\tName | n - Sort by name",
+                "2.\tPushed | p - Sort by push time",
+                "3.\tUpdated | u - Sort by update time",
+                "4.\tCreated | c - Sort by creation time",
+                "5.\tStars | star | s - Sort by star count",
+                "Defaults to star count."
+            ) do |sort|
 
-
-class Parser
-    @opts1 = {
-        sort: "star",
-        page: 10
-    }
-    def self.parse(args)
-        global_parser = OptionParser.new do |opts|
-            opts.banner = "Usage: gitsort.rb [WHAT_TO_SORT [OPTIONS]] [OPTIONS] [SET_TOKEN]"
+                case sort
+                when "name", "n"
+                    options[:sort] = "NAME"
+                when "pushed", "p"
+                    options[:sort] = "PUSHED_AT"
+                when "updated", "u"
+                    options[:sort] = "UPDATED_AT"
+                when "created", "c"
+                    options[:sort] = "CREATED_AT"
+                when "stars", "star", "s"
+                    options[:sort] = "STARGAZERS"
+                else
+                    raise "Invalid sort method"
+                end
+            end
         end
 
-        sub_commands = {
-            "fork" => OptionParser.new do |opts|
-                opts.banner = "Usage: fork [SORT_METHOD] [ITEMS PER PAGE] [TOKEN]"
-                opts.on(
-                    "-u [STRING]",
-                    "--url [STRING]",
-                    String,
-                    "Url of Github Repository."
-                )
-            end
+        subcommands = {
+            "repositories" => repo_opts,
+            "repos" => repo_opts,
+            "r" => repo_opts,
+            "forks" => fork_opts,
+            "fork" => fork_opts,
+            "f" => fork_opts,
         }
 
-        global_parser.parse!
-        @options
+        global.order!
+        command = args.shift
+        subcommands[command].order!
+
+        options
     end
 end
 
-
-require 'optparse'
-
-options = {}
-
-subtext = <<HELP
-Available things to sort includes:
-    forks | fork | f : Sort forks of a repository
-    contributors | c : Sort contributors of a repository
-    dependencies | d : Sort dependencies of a repository
-
-See 'opt.rb COMMAND --help' for more information on a specific command.
-HELP
-
-global = OptionParser.new do |opts|
-    opts.banner = "Usage: opt.rb [sort [options]] [TOKEN]"
-    opts.on(
-        "--token [STRING]",
-        String,
-        "Access token for listing private repositories and accessing graphql queries"
-    ) do |token|
-        options[:token] = token if token
-    end
-    opts.separator ""
-    opts.separator subtext
-end
-
-fork_opts = OptionParser.new do |opts|
-    opts.banner = "Usage: gitsort.rb fork [SORT_METHOD] [ITEMS_PER_PAGE]"
-    opts.on(
-        "-u [STRING]",
-        "--url [STRING]",
-        String,
-        "Url of Github Repository."
-    )
-
-    opts.on(
-        '-s [STRING]',
-        '--sort [STRING]',
-        String,
-        "Sort forks by method. Sort methods:",
-        "1.\tstars | star | s - sort by star count",
-        "2.\tforks | fork | f - sort by fork count",
-        "3.\tupdated | activity | up | u | a - sort by last updated",
-        "Defaults to star count."
-        ) do |sort|
-
-        case sort
-        when "star", "stars", "s"
-            @options[:sort] = "stargazers"
-        when "fork", "forks", "f"
-            @options[:sort] = "fork"
-        when "newest", "n"
-            @options[:sort] = "newest"
-        else
-            raise "Invalid sort method"
-        end
-    end
-
-    opts.on(
-        "-p [INTEGER]",
-        "--per-page [INTEGER]",
-        Integer,
-        "Show number of items per page. Defaults to 10"
-    ) do |page|
-        @options[:page] = page if page
-    end
-end
-
-subcommands = { 
-   'forks' => fork_opts,
-   "fork" => fork_opts,
-   "f" => fork_opts,
-   'baz' => OptionParser.new do |opts|
-      opts.banner = "Usage: baz [options]"
-      opts.on("-q", "--[no-]quiet", "quietly run ") do |v|
-        options[:quiet] = v
-      end
-   end
- }
-
- global.order!
- command = ARGV.shift
- subcommands[command].order!
-
- puts "Command: #{command} "
- p options
- puts "ARGV:"
- p ARGV
+options = SortParser.parse(ARGV)
+puts options

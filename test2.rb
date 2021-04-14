@@ -71,22 +71,54 @@ end
 l = ConsoleReset.new()
 l.test
 =end
+require 'io/console'
 
+# Returns size of windows 
+# @return [Integer, Integer] height and width
 def winsize
-  require 'io/console'
   IO.console.winsize
+end
+
+
+# A prompt that allows for text to display both to the left
+# and the right of the cursor. The input cannot exceed available
+# space and can be validated.
+# @param [String] left_text Text to display to the left
+# @param [String] right_text Text to display to the right
+# @param [Integer] width Width of entire prompt
+# @param [Regex] validation Validate input (one char at a time)
+# @return [String] User input
+def pretty_prompt(left_text, right_text, width, validation = /\d/)
+  # Calculate available space
+  input_width = width - left_text.size - right_text.size
+  puts left_text + " " * input_width + right_text
+  
+  # Move cursor
+  STDOUT.print("\e[1A")
+  STDOUT.print("\e[#{left_text.size}C")
+
+  output = ""
+  while output.size < input_width
+    c = STDIN.getch
+    case c
+    when "\b"
+      if output.size > 0
+        STDOUT.print("\b \b")
+        output = output[0...-1]
+      end
+    when "\r"
+      return output
+    when "\u0003"
+      exit
+    when validation
+      output += c
+      print c
+    end
+  end
+  output
 end
 
 WIDTH = winsize[1]
 
-STDOUT.print("\e[?25l")
 puts " Header ".center(WIDTH, "-")
-12.downto(6) do |i|
-  puts "Hello, world#{i}!" + "\e[0K"
-  puts "H#{'e'*i}llo" + "\e[0K"
-  $stdout.flush
-  STDOUT.print("\e[2A")
-  sleep(1)
-end
-
-puts "\e[?25h"
+puts "\nUser Input: #{pretty_prompt("Go to page: ", "Ratelimit: 3000", WIDTH)}"
