@@ -1,13 +1,3 @@
-=begin
-require "octokit"
-
-# token = a522d6e2f5d630849cd1634921e9919aaef8c81c
-client = Octokit::Client.new(:access_token => 'a522d6e2f5d630849cd1634921e9919aaef8c81c')
-client.repos.each do |i|
-    p i["full_name"]
-end
-=end
-
 require "dotenv"
 Dotenv.load
 

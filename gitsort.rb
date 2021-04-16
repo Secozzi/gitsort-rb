@@ -1,3 +1,17 @@
+require_relative "lib/argparser"
+
+def get_token
+    File.open("./lib/.env", "r") do |env|
+        env.each_line do |line|
+            if line.start_with? "GITSORT_TOKEN"
+                return line.split("=", 2)[1]
+            end
+        end
+        puts "Token not set, set it with `gitsort.rb --set-token YOUR_ACCESS_TOKEN`"
+        exit(1)
+    end
+end
+
 class BaseSorter
     def initialize(url, sort_method, per_page)
         @url = url
@@ -26,8 +40,13 @@ class BaseSorter
     end
 end
 
-class ForkSorter < BaseSorter end
-class DependenciesSorter < BaseSorter end
-class DependentSorter < BaseSorter end
-class ContributorsSorter < BaseSorter end
-class RepositoriesSorter < BaserSorter end
+class ForkSorter < BaseSorter ; end
+class IssuesSorter < BaseSorter ; end
+class PullReqSorter < BaseSorter ; end
+class DependentSorter < BaseSorter ; end
+class DependenciesSorter < BaseSorter ; end
+class RepositoriesSorter < BaseSorter ; end
+
+puts get_token
+options = SortParser.parse(ARGV)
+puts options
