@@ -1,16 +1,8 @@
 require_relative "lib/argparser"
+require_relative "lib/table"
+require_relative "lib/env"
+require "io/console"
 
-def get_token
-    File.open("./lib/.env", "r") do |env|
-        env.each_line do |line|
-            if line.start_with? "GITSORT_TOKEN"
-                return line.split("=", 2)[1]
-            end
-        end
-        puts "Token not set, set it with `gitsort.rb --set-token YOUR_ACCESS_TOKEN`"
-        exit(1)
-    end
-end
 
 class BaseSorter
     def initialize(url, sort_method, per_page)
@@ -38,6 +30,10 @@ class BaseSorter
             [m[:owner], name].map {|item| item.gsub(/((.git)|\/)$/, "")}
         end
     end
+
+    def display_table
+
+    end
 end
 
 class ForkSorter < BaseSorter ; end
@@ -47,6 +43,27 @@ class DependentSorter < BaseSorter ; end
 class DependenciesSorter < BaseSorter ; end
 class RepositoriesSorter < BaseSorter ; end
 
-puts get_token
 options = SortParser.parse(ARGV)
-puts options
+
+case options[:command]
+when "token"
+    if key_exists("GITSORT_TOKEN")
+        puts "Token is already set, do you want to update it? [y/n]"
+        input = STDIN.getch
+        if input.downcase == "y"
+            update_key("GITSORT_TOKEN", options[:token])
+            puts "Successfully updated token."
+        elsif input.downcase == "n"
+        else
+            puts "Error: invalid choice."
+        end
+    else
+        append_key("GITSORT_TOKEN", options[:token])
+        puts "Successfully added token."
+    end
+when "forks"
+    puts "SORTING FORKS"
+else
+    puts "UWU"
+end
+#puts options

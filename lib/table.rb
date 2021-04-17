@@ -4,21 +4,32 @@ CURS_VIS = "\e[?25h"
 def UP_N_LINES(n) ; "\e[#{n}A" end
 
 
+# Returns number of rows and cols in terminal 
+# @return [Integer, Integer] height and width
 def winsize
     require 'io/console'
     IO.console.winsize
 end
 
 
+# Class that represents a "fancy" item, i.e
+# a piece of text surrounded by ansi escape
+# codes. It's almost the same as a normal
+# string with the exception of the .length
+# method which returns the size of the text
+# not sorrounded by escape codes.
 class FancyItemBase < String
+    # @title String the string to be displayed
     def initialize(title)
         @title = title
     end
 
+    # Returns the size of the displayed string
     def length
         @title.length
     end
 
+    # Wraps the string with ansi esacpe codes
     def to_s(args)
         "\033[#{args}m#{@title}\033[0m"
     end
@@ -58,6 +69,7 @@ class HyperLinkItem < FancyItemBase
 end
 
 
+# A class to create, render, and update an ascii table
 class Table
     attr_reader :col_sizes
 
@@ -187,18 +199,47 @@ class Table
     end
 end
 
-def center(string, string_width, width)
+# A prompt that allows for text to display both to the left
+# and the right of the cursor. The input cannot exceed available
+# space and can be validated.
+# @param [String] left_text Text to display to the left
+# @param [String] right_text Text to display to the right
+# @param [Integer] width Width of entire prompt
+# @param [Regex] validation Validate input (one char at a time)
+# @return [String] User input
+def pretty_prompt(left_text, right_text, width, validation = /\d/)
+    # Calculate available space
+    input_width = width - left_text.size - right_text.size
+    puts left_text + " " * input_width + right_text
     
-end
-
-def get_input(message, toggle_vis = 1)
-    print message + "\e[0K"
-    STDOUT.print(CURS_VIS * toggle_vis)
-    g = gets.chomp
-    STDOUT.print(CURS_INVIS * toggle_vis)
+    # Move cursor
     STDOUT.print("\e[1A")
+    STDOUT.print("\e[#{left_text.size}C")
+  
+    output = ""
+    while output.size < input_width
+      c = STDIN.getch
+      case c
+      when "\b"
+        if output.size > 0
+          STDOUT.print("\b \b")
+          output = output[0...-1]
+        end
+      when "\r"
+        return output
+      when "\u0003"
+        exit
+      when validation
+        output += c
+        print c
+      end
+    end
+    puts ""
+    output
 end
+# puts "\nUser Input: #{pretty_prompt("Go to page: ", "Ratelimit: 3000", WIDTH)}"
 
+=begin
 t = Table.new(["A", "B"], ["Te1", "Te2"])
 t << ["1", "12"]
 t << ["Hell", "ther"]
@@ -225,3 +266,4 @@ STDOUT.print(CURS_INVIS)
 end
 
 STDOUT.print(CURS_VIS)
+=end

@@ -8,17 +8,18 @@ class SortParser
         options = {sort: "STARGAZERS", page: 10, order: "DESC"}
 
         subtext = <<HELP
-Available things to sort includes:
+Available commands:
+    set-token     | token | t - Save Github personal access token
     forks         | fork  | f - Sort forks of a repository
     issues        | issue | i - Sort issues of a repository
     pull_requests | pr    | p - Sort pull requests of a repository
     repositories  | repos | r - Sort repositories of an user or organization
 
-See 'opt.rb COMMAND --help' for more information on a specific command.
+See 'gitsort.rb COMMAND --help' for more information on a specific command.
 HELP
 
         global = OptionParser.new do |opts|
-            opts.banner = "Usage: opt.rb sort [options] [ITEMS_PER_PAGE] [ORDER_DIRECTION] "
+            opts.banner = "Usage: opt.rb COMMAND [options] [ITEMS_PER_PAGE] [ORDER_DIRECTION] "
             opts.on(
                 "-p [INTEGER]",
                 "--per-page [INTEGER]",
@@ -189,6 +190,21 @@ HELP
             end
         end
 
+        token_opts = OptionParser.new do |opts|
+            opts.banner = "Usage: gitsort.rb token YOUR_ACCESS_TOKEN"
+
+            opts.on(
+                "token STRING",
+                String,
+                "Your Github personal access token"
+            ) do |token|
+                unless token
+                    raise "The command `token` requires one argument"
+                end
+                options[:token] = token.to_s
+            end
+        end
+
         commands = {
             "repositories" => "repos",
             "repos" => "repos",
@@ -200,18 +216,23 @@ HELP
             "i" => "issues",
             "pull_requests" => "pull_requests",
             "pr" => "pull_requests",
-            "P" => "pull_requests"
+            "P" => "pull_requests",
+            "set-token" => "token",
+            "token" => "token",
+            "t" => "token"
         }
 
         subcommands = {
             "repos" => repo_opts,
             "forks" => fork_opts,
             "issues" => issues_opts,
-            "pull_requests" => pr_opts
+            "pull_requests" => pr_opts,
+            "token" => token_opts
         }
 
         global.parse!
         global.order!
+
         command = args.shift
         subcommands[commands[command]].order!
         options[:command] = commands[command]
