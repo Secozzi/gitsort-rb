@@ -1,5 +1,6 @@
 require_relative "lib/ratelimiter"
 require_relative "lib/argparser"
+require_relative "lib/graphql"
 require_relative "lib/table"
 require_relative "lib/env"
 
@@ -78,43 +79,9 @@ class BaseSorter
     end
 end
 
-class ForkSorter < BaseSorter
-    def query(owner, name, orderBy, direction, first = 100)
-        <<-GRAPHQL
-        {
-            repository(owner: #{owner}, name: #{name}) {
-                url
-                nameWithOwner
-                stargazerCount
-                watchers { totalCount }
-                forkCount
-                diskUsage
-                updatedAt
-                forks
-                (
-                    first: #{first}
-                    orderBy: {field: #{orderBy}, direction: #{direction}}
-                ){
-                    totalCount
-                    nodes{
-                        url
-                        nameWithOwner
-                        stargazerCount
-                        watchers { totalCount }
-                        forkCount
-                        diskUsage
-                        updatedAt
-                    }
-                }
-            }
-        }
-        GRAPHQL
-    end
-end
+class ForkSorter < BaseSorter ; end
 class IssuesSorter < BaseSorter ; end
 class PullReqSorter < BaseSorter ; end
-class DependentSorter < BaseSorter ; end
-class DependenciesSorter < BaseSorter ; end
 class RepositoriesSorter < BaseSorter ; end
 
 options, args = SortParser.parse(ARGV)
@@ -144,7 +111,7 @@ when "forks"
     sorter = ForkSorter.new(args[0], 10)
     name, owner = sorter.get_url_info
     p options
-    query = sorter.query(owner, name, options[:order], options[:direction])
+    query = fork_query(owner, name, options[:order], options[:direction])
     p get_response(query, token)
 else
     puts "UWU"

@@ -1,35 +1,55 @@
-require 'net/https'
-require "uri"
-require 'json'
-
-query = <<-GRAPHQL
-{
-    repository(owner: "prompt-toolkit", name: "ptpython") {
-        name
-        forkCount
-        forks
-        (
-            first: 4
-            orderBy: {field: PUSHED_AT, direction: DESC}
-        ){
-            totalCount
-            nodes{
-                nameWithOwner
+def fork_query(owner, name, orderBy, direction, first = 100)
+    <<-GRAPHQL
+    {
+        repository(owner: #{owner}, name: #{name}) {
+            url
+            nameWithOwner
+            stargazerCount
+            watchers { totalCount }
+            forkCount
+            diskUsage
+            updatedAt
+            forks
+            (
+                first: #{first}
+                orderBy: {field: #{orderBy}, direction: #{direction}}
+            ){
+                totalCount
+                nodes{
+                    url
+                    nameWithOwner
+                    stargazerCount
+                    watchers { totalCount }
+                    forkCount
+                    diskUsage
+                    updatedAt
+                }
             }
         }
     }
-}
-GRAPHQL
+    GRAPHQL
+end
 
-uri = URI.parse("https://api.github.com/graphql")
+def issue_query
+    <<-GRAPHQL
+    {
 
-https = Net::HTTP.new(uri.host,uri.port)
-https.use_ssl = true
+    }
+    GRAPHQL
+end
 
-req = Net::HTTP::Post.new(uri.path)
-req["Authorization"] = "Bearer <Token>"
-req.body = {"query" => query}.to_json
+def pr_query
+    <<-GRAPHQL
+    {
+        
+    }
+    GRAPHQL
+end
 
-res = https.request(req)
-json = JSON.parse(res.body)
-puts json
+def repo_query
+    <<-GRAPHQL
+    {
+        
+    }
+    GRAPHQL
+end
