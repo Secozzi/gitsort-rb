@@ -1,8 +1,7 @@
-require "json"
-require "awesome_print"
-require "octokit"
+require 'net/https'
+require "uri"
+require 'json'
 
-client = Octokit::Client.new()
 query = <<-GRAPHQL
 {
     repository(owner: "prompt-toolkit", name: "ptpython") {
@@ -10,7 +9,7 @@ query = <<-GRAPHQL
         forkCount
         forks
         (
-            first: 12
+            first: 4
             orderBy: {field: PUSHED_AT, direction: DESC}
         ){
             totalCount
@@ -22,5 +21,15 @@ query = <<-GRAPHQL
 }
 GRAPHQL
 
-response = client.post "/graphql", {query: query}.to_json
-ap response
+uri = URI.parse("https://api.github.com/graphql")
+
+https = Net::HTTP.new(uri.host,uri.port)
+https.use_ssl = true
+
+req = Net::HTTP::Post.new(uri.path)
+req["Authorization"] = "Bearer <Token>"
+req.body = {"query" => query}.to_json
+
+res = https.request(req)
+json = JSON.parse(res.body)
+puts json

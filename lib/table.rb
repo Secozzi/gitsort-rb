@@ -92,18 +92,17 @@ class Table
         @rt = "\033[0m"
     end
 
-    private
-    def get_col(index)
+    private def get_col(index)
         (@top+@items).map {|row| row[index]}
     end
 
-    def update_col_sizes
+    private def update_col_sizes
         @headings.length.times do |n|
             @col_sizes[n] = get_col(n).max_by(&:length).length
         end
     end
 
-    def get_separator(left, middle, right, b)
+    private def get_separator(left, middle, right, b)
         out = left
         @col_sizes.each do |w|
             out += b * (w+2)
@@ -113,7 +112,7 @@ class Table
         out
     end
 
-    def get_middle(array, show_bg = 0, edge = @borders[:e])
+    private def get_middle(array, show_bg = 0, edge = @borders[:e])
         output = []
         array.each_with_index do |item, index|
             output << (
@@ -126,8 +125,7 @@ class Table
         "#{edge}" + output.join("#{edge}") + "#{edge}"
     end
 
-    public
-    def <<(items)
+    public def <<(items)
         @items << items
     end
 

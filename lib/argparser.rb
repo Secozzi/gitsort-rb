@@ -237,6 +237,6 @@ HELP
         subcommands[commands[command]].order!
         options[:command] = commands[command]
 
-        options
+        [options, args]
     end
 end

@@ -9,7 +9,7 @@ end
 
 def get_value(key)
     text = File.read(ENV_PATH)
-    match = /[a-zA-Z0-9_]+=(?<value>.+)/.match(text)
+    match = /#{key}=(?<value>[a-zA-Z0-9_]+)/.match(text)
     if match
         return match[:value]
     else

@@ -1,4 +1,4 @@
-require_relative "lib/env"
+require_relative "env"
 
 
 class RateLimiter
@@ -11,8 +11,7 @@ class RateLimiter
         end
     end
 
-    private
-    def refresh_limit
+    private def refresh_limit
         now = Time.now.to_i
         last_refresh = get_value("LAST_UPDATE").to_i
         if now - last_refresh >= 3600
@@ -21,8 +20,7 @@ class RateLimiter
         end
     end
 
-    public
-    def get_limit
+    public def get_limit
         refresh_limit
         return get_value("RATE_LIMIT")
     end
