@@ -111,7 +111,8 @@ when "forks"
     sorter = ForkSorter.new(args[0], 10)
     name, owner = sorter.get_url_info
     p options
-    query = fork_query(owner, name, options[:order], options[:direction])
+    query = fork_query(owner, name, options[:sort], options[:order])
+    puts query
     p get_response(query, token)
 else
     puts "UWU"
