@@ -58,6 +58,7 @@ class BaseSorter
     def initialize(url, per_page)
         @url = url
         @per_page = per_page
+        @table = nil
     end
 
     # Returnerar en lista med [ägare, repo_namn] från olika typer av Github urls och vissa icke-urls.
@@ -77,22 +78,68 @@ class BaseSorter
             end
         end
     end
+
+    def create_table(headings, master = nil)
+        @table = Table.new(headings)
+        @table.set_master(master) if master
+    end
+
+    def start_loop(items)
+        items[0..9].each do |i|
+            @table << i
+        end
+        @table.render
+        table_width = @table.total_width
+
+        while true
+            to_page = pretty_prompt("Go to page: ", "Ratelimit: 3000", table_width).to_i - 1
+            STDOUT.print("\e[1E")
+            STDOUT.print("\e[1A")
+            @table.clear
+            items[0+10*to_page..9+10*to_page].each do |i|
+                @table << i
+            end
+            @table.render
+            table_width = @table.total_width
+        end
+    end
 end
 
 class ForkSorter < BaseSorter
     def get_data(data)
+        puts "DATA: #{data}"
         mr = data["data"]["repository"]
         forks = data["data"]["repository"]["forks"]["nodes"]
-        table = Table.new(
-            ["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"],
-            [
-                HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
-                mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
-                mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
-                to_filesize(mr["diskUsage"].to_i * 1024).to_s, mr["updatedAt"]
+        forks_list = []
+
+        forks.each do |fork|
+            forks_list << [
+                HyperLinkItem.new("Link", fork["url"]), *fork["nameWithOwner"].split("/"),
+                fork["stargazerCount"].to_s, fork["openIssues"]["totalCount"].to_s,
+                fork["forkCount"].to_s, fork["watchers"]["totalCount"].to_s,
+                to_filesize(fork["diskUsage"].to_i * 1024).to_s, fork["updatedAt"]
             ]
-        )
-        table.render
+        end
+
+        master_list = [
+            HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
+            mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
+            mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
+            to_filesize(mr["diskUsage"].to_i * 1024).to_s, mr["updatedAt"]
+        ]
+
+        [forks_list, master_list]
+
+        #table = Table.new(
+        #    ["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"]
+        #)
+        #table.set_master([
+        #    HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
+        #    mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
+        #    mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
+        #    to_filesize(mr["diskUsage"].to_i * 1024).to_s, mr["updatedAt"]
+        #])
+        #table.render
     end
 end
 class IssuesSorter < BaseSorter ; end
@@ -124,10 +171,14 @@ when "forks"
     end
     token = get_value("GITSORT_TOKEN")
     sorter = ForkSorter.new(url, 10)
-    name, owner = sorter.get_url_info
+
+    owner, name = sorter.get_url_info
     query = fork_query(owner, name, options[:sort], options[:order])
     data = get_response(query, token)
-    sorter.get_data(data)
+    fork_list, master_list = sorter.get_data(data)
+    sorter.create_table(["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"], master_list)
+    sorter.start_loop(fork_list)
+
 when "repos"
     p options
 else

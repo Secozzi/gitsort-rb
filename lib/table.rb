@@ -29,6 +29,10 @@ class FancyItemBase < String
         @title.length
     end
 
+    def [](*args)
+        @title[*args]
+    end
+
     # Wraps the string with ansi esacpe codes
     def to_s(args)
         "\033[#{args}m#{@title}\033[0m"
@@ -73,9 +77,10 @@ end
 class Table
     attr_reader :col_sizes
 
-    def initialize(headings, master)
+    def initialize(headings)
+        @width = winsize[1]
         @headings = headings
-        @master = master
+        @master = nil
         @col_sizes = [0] * @headings.length
         @borders = {
             tl: "┌", h: "─", tm: "┬", tr: "┐",
@@ -85,15 +90,37 @@ class Table
             he: "┃", hl: "┡", hr: "┩", hm: "╇"
         }
 
-        @top = [@headings, @master]
         @items = []
+        @constraints = []
 
         @bg = "\033[48;2;62;71;86m"
         @rt = "\033[0m"
     end
 
+    def set_master(values)
+        @master = values
+    end
+
+    private def set_constraints
+        def table_width(arr)
+            arr.inject(0){|sum,x| sum + x + 2} + arr.length + 1
+        end
+        
+        sizes = @col_sizes.dup
+        while table_width(sizes) > @width - 1
+            maxi = sizes.index(sizes.max)
+            sizes[maxi] -= 1
+        end
+        @constraints = @col_sizes.zip(sizes).map { |a, b| a - b}
+    end
+
     private def get_col(index)
-        (@top+@items).map {|row| row[index]}
+        if @master
+            top = [@headings] + [@master]
+        else
+            top = [@headings]
+        end
+        (top+@items).map {|row| row[index]}
     end
 
     private def update_col_sizes
@@ -104,8 +131,8 @@ class Table
 
     private def get_separator(left, middle, right, b)
         out = left
-        @col_sizes.each do |w|
-            out += b * (w+2)
+        @col_sizes.each_with_index do |w, index|
+            out += b * (w+2-@constraints[index])
             out += middle
         end
         out[-1] = right
@@ -115,10 +142,17 @@ class Table
     private def get_middle(array, show_bg = 0, edge = @borders[:e])
         output = []
         array.each_with_index do |item, index|
+            if @constraints[index] != 0 and item.length > (@col_sizes[index] - @constraints[index])
+                _item = item[0...-(@constraints[index] + 1)] + "…"
+                constrain_space = 0
+            else
+                _item = item.to_s
+                constrain_space = 1
+            end
             output << (
                 @bg * show_bg + # Show bg
-                " " + item.to_s + # Item
-                " " * (@col_sizes[index] - item.length + 1) + # Spacing
+                " " + _item.to_s + # Item
+                " " * (@col_sizes[index] - @constraints[index] * constrain_space - item.length + 1) + # Spacing
                 @rt * show_bg # Reset
             )
         end
@@ -135,6 +169,7 @@ class Table
 
     def get_array
         update_col_sizes
+        set_constraints
         out_arr = []
 
         # Print top
@@ -154,10 +189,12 @@ class Table
             @borders[:hh]
         )
 
-        # Print underline items
-        out_arr << get_middle(
-            @master.drop(1).map {|s| UnderLine.new(s)}.unshift(@master[0])
-        )
+        # Print underline items (master)
+        if @master
+            out_arr << get_middle(
+                @master.drop(1).map {|s| UnderLine.new(s)}.unshift(@master[0])
+            )
+        end
 
         # Print rows
         @items.each_with_index do |row, i|
@@ -184,7 +221,7 @@ class Table
     end
 
     def clear
-        STDOUT.print("\e[#{@items.length + 5}A")
+        STDOUT.print("\e[#{@items.length + (@master ? 5 : 4)}A")
         @items = []
     end
 
@@ -237,13 +274,20 @@ def pretty_prompt(left_text, right_text, width, validation = /\d/)
 end
 # puts "\nUser Input: #{pretty_prompt("Go to page: ", "Ratelimit: 3000", WIDTH)}"
 
-=begin
-t = Table.new(["A", "B"], ["Te1", "Te2"])
-t << ["1", "12"]
-t << ["Hell", "ther"]
-t << ["1", "12"]
-t << ["Hell", "ther"]
+WIDTH = 125
+t = Table.new(["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"])
+t.set_master(["Link", "art1415926535", "PyQt5-syntax-highlighting", "10", "0", "3", "2", "132.0KB", "2021-04-12T08:38:51Z"])
+#t << ["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"].reverse
 t.render
+
+puts "COLS_SIZES: #{t.col_sizes}"
+puts t.col_sizes.inject(0){|sum,x| sum + x + 2} + t.col_sizes.length - 1
+
+
+
+=begin
+puts "-" * t.total_width
+
 
 STDOUT.print(CURS_INVIS)
 
