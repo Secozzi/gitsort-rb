@@ -4,8 +4,26 @@ require 'optparse'
 class SortParser
     def self.parse(args)
         args << "--help" if args.empty?
+        url = args.shift
 
         options = {sort: "STARGAZERS", page: 10, order: "DESC"}
+
+        commands = {
+            "repositories" => "repos",
+            "repos" => "repos",
+            "r" => "repos",
+            "forks" => "forks",
+            "fork" => "forks",
+            "f" => "forks",
+            "issues" => "issues",
+            "i" => "issues",
+            "pull_requests" => "pull_requests",
+            "pr" => "pull_requests",
+            "p" => "pull_requests",
+            "set-token" => "token",
+            "token" => "token",
+            "t" => "token"
+        }
 
         subtext = <<HELP
 Available commands:
@@ -19,7 +37,7 @@ See 'gitsort.rb COMMAND --help' for more information on a specific command.
 HELP
 
         global = OptionParser.new do |opts|
-            opts.banner = "Usage: opt.rb COMMAND [options] [ITEMS_PER_PAGE] [ORDER_DIRECTION] "
+            opts.banner = "Usage: opt.rb URL_OR_REPO_PATH [ITEMS_PER_PAGE] [ORDER_DIRECTION] COMMAND [command_options]"
             opts.on(
                 "-p [INTEGER]",
                 "--per-page [INTEGER]",
@@ -47,14 +65,11 @@ HELP
         end
 
         issues_opts = OptionParser.new do |opts|
-            options[:sort] = "UPDATED_AT"
+            if commands[args[0]] == "issues"
+                options[:sort] = "COMMENTS"
+            end
+
             opts.banner = "Usage: gitsort.rb issues [SORT_METHOD]"
-            opts.on(
-                "-u [STRING]",
-                "--url [STRING]",
-                String,
-                "Url of Github Repository"
-            )
             
             opts.on(
                 '-s [STRING]',
@@ -81,12 +96,6 @@ HELP
 
         fork_opts = OptionParser.new do |opts|
             opts.banner = "Usage: gitsort.rb fork [SORT_METHOD]"
-            opts.on(
-                "-u [STRING]",
-                "--url [STRING]",
-                String,
-                "Url of Github Repository."
-            )
 
             opts.on(
                 '-s [STRING]',
@@ -100,7 +109,6 @@ HELP
                 "5.\tstars   | star | s - Sort by star count",
                 "Defaults to star count."
             ) do |sort|
-
                 case sort.downcase
                 when "name", "n"
                     options[:sort] = "NAME"
@@ -119,15 +127,11 @@ HELP
         end
 
         pr_opts = OptionParser.new do |opts|
-            options[:sort] = "UPDATED_AT"
-            opts.banner = "Usage: gitsort.rb pr [SORT_METHOD]"
-            opts.on(
-                "-u [STRING]",
-                "--url [STRING]",
-                String,
-                "Url of Github Repository"
-            )
-            
+            if commands[args[0]] == "pull_requests"
+                options[:sort] = "COMMENTS"
+            end
+
+            opts.banner = "Usage: gitsort.rb <url> pr [SORT_METHOD]"
             opts.on(
                 '-s [STRING]',
                 '--sort [STRING]',
@@ -153,13 +157,6 @@ HELP
         
         repo_opts = OptionParser.new do |opts|
             opts.banner = "Usage: gitsort.rb repos [SORT_METHOD]"
-            opts.on(
-                "-u [STRING]",
-                "--user [STRING]",
-                String,
-                "Name of user or organization."
-            )
-
             opts.on(
                 '-s [STRING]',
                 '--sort [STRING]',
@@ -198,29 +195,12 @@ HELP
                 String,
                 "Your Github personal access token"
             ) do |token|
-                unless token
-                    raise "The command `token` requires one argument"
-                end
+                #unless token
+                #    raise "The command `token` requires one argument"
+                #end
                 options[:token] = token.to_s
             end
         end
-
-        commands = {
-            "repositories" => "repos",
-            "repos" => "repos",
-            "r" => "repos",
-            "forks" => "forks",
-            "fork" => "forks",
-            "f" => "forks",
-            "issues" => "issues",
-            "i" => "issues",
-            "pull_requests" => "pull_requests",
-            "pr" => "pull_requests",
-            "P" => "pull_requests",
-            "set-token" => "token",
-            "token" => "token",
-            "t" => "token"
-        }
 
         subcommands = {
             "repos" => repo_opts,
@@ -230,13 +210,12 @@ HELP
             "token" => token_opts
         }
 
-        global.parse!
         global.order!
 
         command = args.shift
         subcommands[commands[command]].order!
         options[:command] = commands[command]
 
-        [options, args]
+        [options, url]
     end
 end

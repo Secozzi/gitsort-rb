@@ -79,12 +79,27 @@ class BaseSorter
     end
 end
 
-class ForkSorter < BaseSorter ; end
+class ForkSorter < BaseSorter
+    def get_data(data)
+        mr = data["data"]["repository"]
+        forks = data["data"]["repository"]["forks"]["nodes"]
+        table = Table.new(
+            ["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"],
+            [
+                HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
+                mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
+                mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
+                to_filesize(mr["diskUsage"].to_i * 1024).to_s, mr["updatedAt"]
+            ]
+        )
+        table.render
+    end
+end
 class IssuesSorter < BaseSorter ; end
 class PullReqSorter < BaseSorter ; end
 class RepositoriesSorter < BaseSorter ; end
 
-options, args = SortParser.parse(ARGV)
+options, url = SortParser.parse(ARGV)
 
 case options[:command]
 when "token"
@@ -108,12 +123,13 @@ when "forks"
         exit(1)
     end
     token = get_value("GITSORT_TOKEN")
-    sorter = ForkSorter.new(args[0], 10)
+    sorter = ForkSorter.new(url, 10)
     name, owner = sorter.get_url_info
-    p options
     query = fork_query(owner, name, options[:sort], options[:order])
-    puts query
-    p get_response(query, token)
+    data = get_response(query, token)
+    sorter.get_data(data)
+when "repos"
+    p options
 else
     puts "UWU"
 end
