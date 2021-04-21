@@ -92,6 +92,7 @@ class BaseSorter
         table_width = @table.total_width
 
         while true
+            STDOUT.print("\e[0J")
             to_page = pretty_prompt("Go to page: ", "Ratelimit: 3000", table_width).to_i - 1
             STDOUT.print("\e[1E")
             STDOUT.print("\e[1A")
@@ -107,7 +108,6 @@ end
 
 class ForkSorter < BaseSorter
     def get_data(data)
-        puts "DATA: #{data}"
         mr = data["data"]["repository"]
         forks = data["data"]["repository"]["forks"]["nodes"]
         forks_list = []

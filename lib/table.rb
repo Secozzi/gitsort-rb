@@ -12,16 +12,23 @@ def winsize
 end
 
 
+class String
+    def constrain(amout)
+        self[0...-amout] + "…"
+    end
+end
+
 # Class that represents a "fancy" item, i.e
 # a piece of text surrounded by ansi escape
 # codes. It's almost the same as a normal
 # string with the exception of the .length
 # method which returns the size of the text
 # not sorrounded by escape codes.
-class FancyItemBase < String
+class FancyItem < String
     # @title String the string to be displayed
-    def initialize(title)
+    def initialize(title, args)
         @title = title
+        @args = args
     end
 
     # Returns the size of the displayed string
@@ -29,42 +36,32 @@ class FancyItemBase < String
         @title.length
     end
 
-    def [](*args)
-        @title[*args]
+    def constrain(amount)
+        "\033[#{@args}m#{@title[0...-amount] + "…"}\033[0m"
     end
 
     # Wraps the string with ansi esacpe codes
-    def to_s(args)
-        "\033[#{args}m#{@title}\033[0m"
-    end
-end
-
-
-class UnderLine < FancyItemBase
     def to_s
-        super("4")
+        "\033[#{@args}m#{@title}\033[0m"
     end
 end
 
 
-class BackgroundColor < FancyItemBase
+class BackgroundColor < FancyItem
     def initialize(title, r, g, b)
-        super(title)
-        @r = r
-        @g = g
-        @b = b
-    end
-    
-    def to_s
-        super("48;2;#{@r};#{@g};#{@b}")
+        super(title, "48;2;#{r};#{g};#{b}")
     end
 end
 
 
-class HyperLinkItem < FancyItemBase
+class HyperLinkItem < FancyItem
     def initialize(title, link)
-        super(title)
+        @title = title
         @link = link
+    end
+
+    def constrain(amount)
+        "\u001B]8;;#{@link}\u0007#{@title[0...-amount] + "…"}\u001B]8;;\u0007"
     end
 
     def to_s
@@ -105,7 +102,6 @@ class Table
         def table_width(arr)
             arr.inject(0){|sum,x| sum + x + 2} + arr.length + 1
         end
-        
         sizes = @col_sizes.dup
         while table_width(sizes) > @width - 1
             maxi = sizes.index(sizes.max)
@@ -143,7 +139,7 @@ class Table
         output = []
         array.each_with_index do |item, index|
             if @constraints[index] != 0 and item.length > (@col_sizes[index] - @constraints[index])
-                _item = item[0...-(@constraints[index] + 1)] + "…"
+                _item = item.constrain(@constraints[index] + 1)
                 constrain_space = 0
             else
                 _item = item.to_s
@@ -151,7 +147,7 @@ class Table
             end
             output << (
                 @bg * show_bg + # Show bg
-                " " + _item.to_s + # Item
+                " " + _item + # Item
                 " " * (@col_sizes[index] - @constraints[index] * constrain_space - item.length + 1) + # Spacing
                 @rt * show_bg # Reset
             )
@@ -161,10 +157,6 @@ class Table
 
     public def <<(items)
         @items << items
-    end
-
-    def total_width
-        @col_sizes.inject(0){|sum,x| sum + x + 2} + @col_sizes.length + 1
     end
 
     def get_array
@@ -192,7 +184,7 @@ class Table
         # Print underline items (master)
         if @master
             out_arr << get_middle(
-                @master.drop(1).map {|s| UnderLine.new(s)}.unshift(@master[0])
+                @master.drop(1).map {|s| FancyItem.new(s, "4")}.unshift(@master[0])
             )
         end
 
@@ -210,6 +202,10 @@ class Table
         )
 
         out_arr
+    end
+
+    def total_width
+        @col_sizes.inject(0){|sum,x| sum + x + 2} + @col_sizes.length + 1 - @constraints.inject(0){|sum,x| sum + x} 
     end
 
     def render
@@ -274,6 +270,7 @@ def pretty_prompt(left_text, right_text, width, validation = /\d/)
 end
 # puts "\nUser Input: #{pretty_prompt("Go to page: ", "Ratelimit: 3000", WIDTH)}"
 
+=begin
 WIDTH = 125
 t = Table.new(["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"])
 t.set_master(["Link", "art1415926535", "PyQt5-syntax-highlighting", "10", "0", "3", "2", "132.0KB", "2021-04-12T08:38:51Z"])
@@ -282,13 +279,10 @@ t.render
 
 puts "COLS_SIZES: #{t.col_sizes}"
 puts t.col_sizes.inject(0){|sum,x| sum + x + 2} + t.col_sizes.length - 1
-
+=end
 
 
 =begin
-puts "-" * t.total_width
-
-
 STDOUT.print(CURS_INVIS)
 
 1.upto(3) do |i|
