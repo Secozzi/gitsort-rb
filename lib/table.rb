@@ -238,7 +238,7 @@ end
 # @param [Integer] width Width of entire prompt
 # @param [Regex] validation Validate input (one char at a time)
 # @return [String] User input
-def pretty_prompt(left_text, right_text, width, validation = /\d/)
+def pretty_prompt(left_text, right_text, width, validation = /\d|q/)
     # Calculate available space
     input_width = width - left_text.size - right_text.size
     puts left_text + " " * input_width + right_text
@@ -260,6 +260,8 @@ def pretty_prompt(left_text, right_text, width, validation = /\d/)
         return output
       when "\u0003"
         exit
+      when "q"
+        exit(1)
       when validation
         output += c
         print c

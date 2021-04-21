@@ -86,7 +86,7 @@ def repo_query(login_type, login)
         #{login_type}(login:"#{login}") {
             name
             repositories(
-            first: 10
+            first: 100
             orderBy: {field:STARGAZERS direction:DESC}
             ){
                 nodes {
@@ -101,6 +101,7 @@ def repo_query(login_type, login)
                         totalCount
                     }
                     forkCount
+                    diskUsage
                     updatedAt
                 }
             }
