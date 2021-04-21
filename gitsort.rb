@@ -160,7 +160,7 @@ class RepositoriesSorter < BaseSorter
                 lang,
                 repo["stargazerCount"].to_s, repo["openIssues"]["totalCount"].to_s,
                 repo["forkCount"].to_s, to_filesize(repo["diskUsage"].to_i * 1024).to_s, 
-                repo["updatedAt"].to_s
+                humanize_time(repo["pushedAt"])
             ]
         end
         repo_list
@@ -211,11 +211,11 @@ else
         end
         uri = URI.parse("https://api.github.com/users/#{url}")
         type = JSON.parse(Net::HTTP.get(uri))["type"].downcase
-        query = repo_query(type, url)
+        query = repo_query(type, url, options[:sort], options[:order])
         data = get_response(query, token)
         rate_limiter.add_limit(1)
         repo_list = sorter.get_data(data, type)
-        sorter.create_table(["Link", "Repo Name", "Language", "Stars", "Open issues", "Fork count", "Size", "Last updated"])
+        sorter.create_table(["Link", "Repo Name", "Language", "Stars", "Open issues", "Fork count", "Size", "Last push"])
         sorter.start_loop(repo_list)
     end
 end

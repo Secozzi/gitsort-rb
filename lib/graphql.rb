@@ -80,14 +80,14 @@ def pr_query(owner, name, orderBy, direction, first = 100)
     GRAPHQL
 end
 
-def repo_query(login_type, login)
+def repo_query(login_type, login, orderBy, direction)
     <<-GRAPHQL
     {
         #{login_type}(login:"#{login}") {
             name
             repositories(
             first: 100
-            orderBy: {field:STARGAZERS direction:DESC}
+            orderBy: {field:#{orderBy} direction:#{direction}}
             ){
                 nodes {
                     url
@@ -102,7 +102,7 @@ def repo_query(login_type, login)
                     }
                     forkCount
                     diskUsage
-                    updatedAt
+                    pushedAt
                 }
             }
         }

@@ -4,7 +4,9 @@ require 'optparse'
 class SortParser
     def self.parse(args)
         args << "--help" if args.empty?
-        url = args.shift
+        unless args.include? "--help"
+            url = args.shift
+        end
 
         options = {sort: "STARGAZERS", page: 10, order: "DESC"}
 
