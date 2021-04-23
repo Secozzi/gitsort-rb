@@ -1,39 +1,40 @@
-ENV_PATH = "./lib/.env"
+module Env
+    ENV_PATH = "./lib/.env"
 
-
-def key_exists(key)
-    text = File.read(ENV_PATH)
-    return !!(text =~ /^#{key}/)
-end
-
-
-def get_value(key)
-    text = File.read(ENV_PATH)
-    match = /#{key}=(?<value>[a-zA-Z0-9_]+)/.match(text)
-    if match
-        return match[:value]
-    else
-        return nil
+    def self.key_exists(key)
+        text = File.read(ENV_PATH)
+        return !!(text =~ /^#{key}/)
     end
-end
 
 
-def update_key(key, value)
-    text = File.read(ENV_PATH)
-    updated = text.gsub(/^#{key}.*$/, "#{key}=#{value}")
-    File.open(ENV_PATH, "w") {|f| f.write updated}
-end
-
-
-def append_key(key, value)
-    if key_exists(key)
-        raise "Key '#{key}' already exists!"
+    def self.get_value(key)
+        text = File.read(ENV_PATH)
+        match = /#{key}=(?<value>[a-zA-Z0-9_]+)/.match(text)
+        if match
+            return match[:value]
+        else
+            return nil
+        end
     end
-    text = File.read(ENV_PATH)
-    if text.end_with? "\n"
-        text += "#{key}=#{value}\n"
-    else
-        text += "\n#{key}=#{value}"
+
+
+    def self.update_key(key, value)
+        text = File.read(ENV_PATH)
+        updated = text.gsub(/^#{key}.*$/, "#{key}=#{value}")
+        File.open(ENV_PATH, "w") {|f| f.write updated}
     end
-    File.open(ENV_PATH, "w") {|f| f.write text}
+
+
+    def self.append_key(key, value)
+        if key_exists(key)
+            raise "Key '#{key}' already exists!"
+        end
+        text = File.read(ENV_PATH)
+        if text.end_with? "\n"
+            text += "#{key}=#{value}\n"
+        else
+            text += "\n#{key}=#{value}"
+        end
+        File.open(ENV_PATH, "w") {|f| f.write text}
+    end
 end

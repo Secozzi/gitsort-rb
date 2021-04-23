@@ -1,4 +1,5 @@
 require_relative "lib/ratelimiter"
+require_relative "lib/sorters"
 require_relative "lib/argparser"
 require_relative "lib/graphql"
 require_relative "lib/table"
@@ -35,7 +36,9 @@ def to_filesize(num)
         'MB' => 1024 ** 3,
         'GB' => 1024 ** 4,
         'TB' => 1024 ** 5
-    }.each_pair { |e, s| return "#{(num.to_f / (s / 1024)).round(2)}#{e}" if num < s }
+    }.each_pair do |e, s|
+        return "#{(num.to_f / (s / 1024)).round(2)} #{e}" if num < s 
+    end
 end
 
 
@@ -50,71 +53,12 @@ def get_response(query, token)
     req.body = {"query" => query}.to_json
 
     res = https.request(req)
+    rate_limit = res["X-RateLimit-Remaining"]
     json = JSON.parse(res.body)
     return json
 end
 
-
-class BaseSorter
-    def initialize(url, per_page)
-        @url = url
-        @per_page = per_page
-        @table = nil
-    end
-
-    # Returnerar en lista med [ägare, repo_namn] från olika typer av Github urls och vissa icke-urls.
-    def get_url_info
-        if (/^(git(hub)?|https?)/ =~ @url).nil?
-            raise "Invliad repo, must be of form [/]owner/repo[...]" if @url.count("/") == 0
-            @url.split("/").reject(&:empty?)[0..1]
-        else
-            if (/^[a-zA-Z0-9\-_.]+\/[a-zA-Z0-9\-_.]+/ =~ @url).nil?
-                m = /^(https|git)?(:\/\/|@)?([^\/:]+)[\/:](?<owner>[^\/:]+)\/(?<name>.+)(.git)?$/.match(@url)
-                raise "Invalid URL" if m.nil?
-
-                name = m[:name].split("/").reject(&:empty?)[0]
-                [m[:owner], name].map {|item| item.gsub(/((.git)|\/)$/, "")}
-            else
-                @url.split("/").reject(&:empty?)[0..1]
-            end
-        end
-    end
-
-    def create_table(headings, master = nil)
-        @table = Table.new(headings)
-        @table.set_master(master) if master
-    end
-
-    def start_loop(items)
-        items[0..(@per_page-1)].each do |i|
-            @table << i
-        end
-        @table.render
-        table_width = @table.total_width
-
-        to_page = 0
-        page_count = (items.length.to_f / @per_page).ceil
-        rate_limit = get_value("RATE_LIMIT")
-        while true
-            STDOUT.print("\e[0J")
-            to_page = pretty_prompt("Go to page: ", "Ratelimit: #{rate_limit} | Page #{to_page+1}/#{page_count}", table_width).to_i - 1
-            unless to_page > page_count - 1
-                STDOUT.print("\e[1E")
-                STDOUT.print("\e[1A")
-                @table.clear
-                items[0+@per_page*to_page..(@per_page-1)+10*to_page].each do |i|
-                    @table << i
-                end
-                @table.render
-                table_width = @table.total_width
-            else
-                STDOUT.print("\e[1E")
-                STDOUT.print("\e[1A")
-            end
-        end
-    end
-end
-
+=begin
 class ForkSorter < BaseSorter
     def get_data(data)
         mr = data["data"]["repository"]
@@ -123,7 +67,7 @@ class ForkSorter < BaseSorter
 
         forks.each do |fork|
             forks_list << [
-                HyperLinkItem.new("Link", fork["url"]), *fork["nameWithOwner"].split("/"),
+                Table::HyperLinkItem.new("Link", fork["url"]), *fork["nameWithOwner"].split("/"),
                 fork["stargazerCount"].to_s, fork["openIssues"]["totalCount"].to_s,
                 fork["forkCount"].to_s, fork["watchers"]["totalCount"].to_s,
                 to_filesize(fork["diskUsage"].to_i * 1024).to_s, 
@@ -132,7 +76,7 @@ class ForkSorter < BaseSorter
         end
 
         master_list = [
-            HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
+            Table::HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
             mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
             mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
             to_filesize(mr["diskUsage"].to_i * 1024).to_s, 
@@ -143,7 +87,25 @@ class ForkSorter < BaseSorter
     end
 end
 class IssuesSorter < BaseSorter ; end
-class PullReqSorter < BaseSorter ; end
+class PullReqSorter < BaseSorter
+    def get_data(data)
+        pp data
+        prs = data["data"]["repository"]["pullRequests"]["nodes"]
+        pr_list = []
+        prs.each do |pr|
+            puts pr["author"]
+            pr_list << [
+                Table::HyperLinkItem.new("Link", pr["permaLink"]),
+                Table::HyperLinkItem.new(pr["author"]["login"], "www.google.com"),
+                humanize_time(pr["createdAt"]), pr["additions"].to_s,
+                pr["deletions"].to_s, pr["changedFiles"].to_s,
+                pr["comments"]["totalCount"].to_s,
+                humanize_time(pr["updatedAt"])
+            ]
+        end
+        pr_list
+    end
+end
 class RepositoriesSorter < BaseSorter
     def get_data(data, type)
         repos = data["data"][type]["repositories"]["nodes"]
@@ -156,7 +118,7 @@ class RepositoriesSorter < BaseSorter
                 lang = _lang[0]["name"].to_s
             end
             repo_list << [
-                HyperLinkItem.new("Link", repo["url"]), repo["name"],
+                Table::HyperLinkItem.new("Link", repo["url"]), repo["name"],
                 lang,
                 repo["stargazerCount"].to_s, repo["openIssues"]["totalCount"].to_s,
                 repo["forkCount"].to_s, to_filesize(repo["diskUsage"].to_i * 1024).to_s, 
@@ -166,36 +128,37 @@ class RepositoriesSorter < BaseSorter
         repo_list
     end
 end
+=end
 
 
 options, url = SortParser.parse(ARGV)
 
 if options[:command] == "token"
-    if key_exists("GITSORT_TOKEN")
+    if Env::key_exists("GITSORT_TOKEN")
         puts "Token is already set, do you want to update it? [y/n]"
         input = STDIN.getch
         if input.downcase == "y"
-            update_key("GITSORT_TOKEN", options[:token])
+            Env::update_key("GITSORT_TOKEN", options[:token])
             puts "Successfully updated token."
         elsif input.downcase == "n"
         else
             puts "Error: invalid choice."
         end
     else
-        append_key("GITSORT_TOKEN", options[:token])
+        Env::append_key("GITSORT_TOKEN", options[:token])
         puts "Successfully added token."
     end
 else
-    unless key_exists("GITSORT_TOKEN")
+    unless Env::key_exists("GITSORT_TOKEN")
         puts "Cannot locate token, please set it and try again."
         exit(1)
     end
-    token = get_value("GITSORT_TOKEN")
+    token = Env::get_value("GITSORT_TOKEN")
     rate_limiter = RateLimiter.new
     sorter = nil
     case options[:command]
     when "forks"
-        sorter = ForkSorter.new(url, options[:page])
+        sorter = Sorter::ForkSorter.new(url, options[:page])
         owner, name = sorter.get_url_info
         query = fork_query(owner, name, options[:sort], options[:order])
         data = get_response(query, token)
@@ -204,7 +167,7 @@ else
         sorter.create_table(["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"], master_list)
         sorter.start_loop(fork_list)
     when "repos"
-        sorter = RepositoriesSorter.new(url, options[:page])
+        sorter = Sorter::RepositoriesSorter.new(url, options[:page])
         unless url =~ /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i
             puts "Invalid username"
             exit(1)
@@ -217,6 +180,15 @@ else
         repo_list = sorter.get_data(data, type)
         sorter.create_table(["Link", "Repo Name", "Language", "Stars", "Open issues", "Fork count", "Size", "Last push"])
         sorter.start_loop(repo_list)
+    when "pull_requests"
+        sorter = Sorter::PullReqSorter.new(url, options[:page])
+        owner, name = sorter.get_url_info
+        query = pr_query(owner, name, options[:sort], options[:order])
+        data = get_response(query, token)
+        rate_limiter.add_limit(1)
+        pr_list = sorter.get_data(data)
+        sorter.create_table(["Link", "Author", "Created at", "Additions", "Deletions", "Changed files", "Comments", "Updated at"])
+        sorter.start_loop(pr_list)
     end
 end
 
