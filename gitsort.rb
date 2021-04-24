@@ -11,53 +11,6 @@ require "date"
 require "json"
 
 
-def humanize_time(time_str)
-    time = Time.now.to_i - DateTime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ").to_time.to_i
-    times = [
-        1, 60, 3600, 86400, 604800, 2629746, 31556925
-    ]
-    strings = [
-        "Second", "Minute", "Hour", "Day", "Week", "Month", "Year"
-    ]
-    tmp = []
-    times.each { |t| tmp << time / t}
-    tmp.reverse.each_with_index do |t, i|
-        if t != 0
-            return "#{t} #{strings[6-i]}#{"s"*(t==1 ? 0 : 1)} ago"
-        end
-    end
-end
-
-
-def to_filesize(num)
-    {
-        'B'  => 1024 ** 1,
-        'KB' => 1024 ** 2,
-        'MB' => 1024 ** 3,
-        'GB' => 1024 ** 4,
-        'TB' => 1024 ** 5
-    }.each_pair do |e, s|
-        return "#{(num.to_f / (s / 1024)).round(2)} #{e}" if num < s 
-    end
-end
-
-
-def get_response(query, token)
-    uri = URI.parse("https://api.github.com/graphql")
-
-    https = Net::HTTP.new(uri.host,uri.port)
-    https.use_ssl = true
-
-    req = Net::HTTP::Post.new(uri.path)
-    req["Authorization"] = "Bearer #{token}"
-    req.body = {"query" => query}.to_json
-
-    res = https.request(req)
-    rate_limit = res["X-RateLimit-Remaining"]
-    json = JSON.parse(res.body)
-    return json
-end
-
 =begin
 class ForkSorter < BaseSorter
     def get_data(data)
@@ -130,7 +83,14 @@ class RepositoriesSorter < BaseSorter
 end
 =end
 
+sorters = {
+    "repos" => Sorter::RepositoriesSorter,
+    "forks" => Sorter::ForkSorter,
+    "issues" => Sorter::IssuesSorter,
+    "pull_requests" => Sorter::PullReqSorter
+}
 
+# {sort: "STARGAZERS", first: 30, after: nil, page: 10, order: "DESC"}
 options, url = SortParser.parse(ARGV)
 
 if options[:command] == "token"
@@ -148,6 +108,17 @@ if options[:command] == "token"
         Env::append_key("GITSORT_TOKEN", options[:token])
         puts "Successfully added token."
     end
+else
+    sorter_class = sorters[options[:command]]
+    unless sorter_class
+        puts "Error: `#{options[:command]}` is not an available command."
+    else
+        sorter = sorter_class.new(url, options)
+        sorter.start
+    end
+end
+
+=begin
 else
     unless Env::key_exists("GITSORT_TOKEN")
         puts "Cannot locate token, please set it and try again."
@@ -191,6 +162,7 @@ else
         sorter.start_loop(pr_list)
     end
 end
+=end
 
 =begin
 case options[:command]

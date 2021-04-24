@@ -1,11 +1,13 @@
 require_relative "table"
+require_relative "utils"
 require_relative "env"
 
 
 class BaseSorter
-    def initialize(url, per_page)
+    def initialize(url, options)
         @url = url
-        @per_page = per_page
+        @options = options
+        @per_page = options[:page]
         @table = nil
     end
 
@@ -79,8 +81,8 @@ module Sorter
                     Table::HyperLinkItem.new("Link", fork["url"]), *fork["nameWithOwner"].split("/"),
                     fork["stargazerCount"].to_s, fork["openIssues"]["totalCount"].to_s,
                     fork["forkCount"].to_s, fork["watchers"]["totalCount"].to_s,
-                    to_filesize(fork["diskUsage"].to_i * 1024).to_s, 
-                    humanize_time(fork["updatedAt"])
+                    Utils::to_filesize(fork["diskUsage"].to_i * 1024).to_s, 
+                    Utils::humanize_time(fork["updatedAt"])
                 ]
             end
     
@@ -88,8 +90,8 @@ module Sorter
                 Table::HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
                 mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
                 mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
-                to_filesize(mr["diskUsage"].to_i * 1024).to_s, 
-                humanize_time(mr["updatedAt"])
+                Utils::to_filesize(mr["diskUsage"].to_i * 1024).to_s, 
+                Utils::humanize_time(mr["updatedAt"])
             ]
     
             [forks_list, master_list]
@@ -98,18 +100,16 @@ module Sorter
     class IssuesSorter < BaseSorter ; end
     class PullReqSorter < BaseSorter
         def get_data(data)
-            pp data
             prs = data["data"]["repository"]["pullRequests"]["nodes"]
             pr_list = []
             prs.each do |pr|
-                puts pr["author"]
                 pr_list << [
                     Table::HyperLinkItem.new("Link", pr["permaLink"]),
                     Table::HyperLinkItem.new(pr["author"]["login"], "www.google.com"),
-                    humanize_time(pr["createdAt"]), pr["additions"].to_s,
+                    Utils::humanize_time(pr["createdAt"]), pr["additions"].to_s,
                     pr["deletions"].to_s, pr["changedFiles"].to_s,
                     pr["comments"]["totalCount"].to_s,
-                    humanize_time(pr["updatedAt"])
+                    Utils::humanize_time(pr["updatedAt"])
                 ]
             end
             pr_list
@@ -117,7 +117,6 @@ module Sorter
     end
     class RepositoriesSorter < BaseSorter
         def get_data(data, type)
-            pp "DATA: #{data}"
             repos = data["data"][type]["repositories"]["nodes"]
             repo_list = []
             repos.each do |repo|
@@ -131,8 +130,8 @@ module Sorter
                     Table::HyperLinkItem.new("Link", repo["url"]), repo["name"],
                     lang,
                     repo["stargazerCount"].to_s, repo["openIssues"]["totalCount"].to_s,
-                    repo["forkCount"].to_s, to_filesize(repo["diskUsage"].to_i * 1024).to_s, 
-                    humanize_time(repo["pushedAt"])
+                    repo["forkCount"].to_s, Utils::to_filesize(repo["diskUsage"].to_i * 1024).to_s, 
+                    Utils::humanize_time(repo["pushedAt"])
                 ]
             end
             repo_list

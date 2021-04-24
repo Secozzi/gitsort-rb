@@ -8,9 +8,10 @@ class SortParser
             url = args.shift
         end
 
-        options = {sort: "STARGAZERS", page: 10, order: "DESC"}
+        options = {sort: "STARGAZERS", first: 30, after: nil, page: 10, order: "DESC"}
 
-        commands = {
+        commands = Hash.new "invalid_command"
+        command_list = {
             "repositories" => "repos",
             "repos" => "repos",
             "r" => "repos",
@@ -26,6 +27,7 @@ class SortParser
             "token" => "token",
             "t" => "token"
         }
+        commands.merge! command_list
 
         subtext = <<HELP
 Available commands:
@@ -60,6 +62,27 @@ HELP
                 else
                     raise "Invalid order method"
                 end
+            end
+
+            opts.on(
+                "-f [INTEGER]",
+                "--first [INTEGER]",
+                Integer,
+                "Select n number of items from list.",
+                "If a query fails, it could be the result of a timeout.",
+                "To solve this, decrease the number of items with this argument."
+            ) do |first|
+                options[:first] = first
+            end
+
+            opts.on(
+                "-a [STRING]",
+                "--after [STRING]",
+                String,
+                "Returns the elements in the list that come after the specified cursor.",
+                "Defaults to not using this argument in the query."
+            ) do |after|
+                options[:after] = after
             end
 
             opts.separator ""
@@ -215,6 +238,12 @@ HELP
         global.order!
 
         command = args.shift
+
+        if commands[command] == "invalid_command"
+            options[:command] = command
+            return [options, url]
+        end
+
         subcommands[commands[command]].order!
         options[:command] = commands[command]
 
