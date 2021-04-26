@@ -45,7 +45,7 @@ See 'gitsort.rb COMMAND --help' for more information on a specific command.
 HELP
 
         global = OptionParser.new do |opts|
-            opts.banner = "Usage: opt.rb URL_OR_REPO_PATH [ITEMS_PER_PAGE] [ORDER_DIRECTION] COMMAND [command_options]"
+            opts.banner = "Usage: opt.rb URL_OR_REPO_PATH [options] COMMAND [command_options]"
             opts.on(
                 "-p [INTEGER]",
                 "--per-page [INTEGER]",
@@ -74,7 +74,8 @@ HELP
                 Integer,
                 "Select n number of items from list.",
                 "If a query fails, it could be the result of a timeout.",
-                "To solve this, decrease the number of items with this argument."
+                "To solve this, decrease the number of items with this argument.",
+                "Defaults to 30."
             ) do |first|
                 options[:first] = first
             end
@@ -98,7 +99,7 @@ HELP
                 options[:sort] = "COMMENTS"
             end
 
-            opts.banner = "Usage: gitsort.rb issues [SORT_METHOD]"
+            opts.banner = "Usage: gitsort.rb [options] issues [SORT_METHOD]"
             
             opts.on(
                 '-s [STRING]',
@@ -124,7 +125,7 @@ HELP
         end
 
         fork_opts = OptionParser.new do |opts|
-            opts.banner = "Usage: gitsort.rb fork [SORT_METHOD]"
+            opts.banner = "Usage: gitsort.rb URL_OR_REPO_PATH [options] fork [SORT_METHOD]"
 
             opts.on(
                 '-s [STRING]',
@@ -160,7 +161,7 @@ HELP
                 options[:sort] = "COMMENTS"
             end
 
-            opts.banner = "Usage: gitsort.rb <url> pr [SORT_METHOD]"
+            opts.banner = "Usage: gitsort.rb URL_OR_REPO_PATH [options] pr [SORT_METHOD]"
             opts.on(
                 '-s [STRING]',
                 '--sort [STRING]',
@@ -185,7 +186,7 @@ HELP
         end
         
         repo_opts = OptionParser.new do |opts|
-            opts.banner = "Usage: gitsort.rb repos [SORT_METHOD]"
+            opts.banner = "Usage: gitsort.rb URL_OR_REPO_PATH [options] repos [SORT_METHOD]"
             opts.on(
                 '-s [STRING]',
                 '--sort [STRING]',
