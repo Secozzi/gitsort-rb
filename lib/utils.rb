@@ -1,5 +1,14 @@
 module Utils
+    # Humanizes time. Input is time and it returns 
+    # 'number `time_unit`(s) ago' where time unit is the nearest
+    # time unit, such as second, minute, or week
+    #
+    # @param [String] time_str A string of time of the format %Y-%m-%dT%H:%M:%SZ
+    # @return [String] Returns 'number `time_unit`(s) ago'
     def self.humanize_time(time_str)
+        unless time_str
+            return "null"
+        end
         time = Time.now.to_i - DateTime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ").to_time.to_i
         times = [
             1, 60, 3600, 86400, 604800, 2629746, 31556925
@@ -16,6 +25,10 @@ module Utils
         end
     end
     
+    # Format the number of bytes into KiloByte, MegaByte etc
+    #
+    # @param [Integer] num The number of bytes
+    # @return [String] Formatted size
     def self.to_filesize(num)
         {
             'B'  => 1024 ** 1,

@@ -2,6 +2,10 @@ require 'optparse'
 
 
 class SortParser
+    # Parses args
+    #
+    # @param [Array] args Args
+    # @return [Array] returns options and the first arg of input args
     def self.parse(args)
         args << "--help" if args.empty?
         unless args.include? "--help"
