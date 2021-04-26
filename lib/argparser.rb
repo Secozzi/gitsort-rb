@@ -8,7 +8,7 @@ class SortParser
     # @return [Array] returns options and the first arg of input args
     def self.parse(args)
         args << "--help" if args.empty?
-        unless args.include? "--help"
+        if (args & ["--help", "set-token", "token", "t"]).empty?
             url = args.shift
         end
 
