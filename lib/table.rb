@@ -217,8 +217,6 @@ module Table
                     " " * spacing + # Spacing
                     @rt * show_bg # Reset
                 )
-
-                #p "ITEM: #{(@bg * show_bg + " " + _item + " " * spacing + @rt * show_bg)}"
             end
             "#{edge}" + output.join("#{edge}") + "#{edge}"
         end

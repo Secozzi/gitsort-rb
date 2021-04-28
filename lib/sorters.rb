@@ -408,7 +408,7 @@ module Sorter
                     lang = _lang[0]["name"].to_s
                 end
                 repo_list << [
-                    Table::HyperLinkItem.new("Link", repo["url"]), rname,
+                    Table::HyperLinkItem.new("Link", repo["url"]), repo["name"],
                     lang,
                     repo["stargazerCount"].to_s, repo["openIssues"]["totalCount"].to_s,
                     repo["forkCount"].to_s, Utils::to_filesize(repo["diskUsage"].to_i * 1024).to_s, 
