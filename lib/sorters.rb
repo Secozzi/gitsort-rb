@@ -75,19 +75,23 @@ class BaseSorter
         else
             after = ""
         end
-        [first, orderBy, direction, after]
+        [owner, name, first, orderBy, direction, after]
     end
 
     # Return the query from the options given by optparse
     # @return [String] The graphql query as a string
-    def get_query ; end
+    def get_query
+        raise "NotImplemented"
+    end
 
     # Return the data to be displayed in the table from the graphql response.
     #
     # @param [String] data The data given from the GraphQL response
     # @param [Array] Array containing each headers, items and optionally
     # the masters to be given to the table
-    def get_data(data) ; end
+    def get_data(data)
+        raise "NotImplemented"
+    end
 
     # Fetches data from graphql.
     # The data is stored in the class variable `@data`
@@ -167,7 +171,7 @@ module Sorter
         end
 
         def get_query
-            first, orderBy, direction, after = get_query_variables
+            owner, name, first, orderBy, direction, after = get_query_variables
             return <<-GRAPHQL
             {
                 repository(owner: "#{owner}", name: "#{name}") {
@@ -214,6 +218,10 @@ module Sorter
             headers = ["Link", "Author", "Participants", "Comment count", "Published at", "Last edit", "Updated at", "State"]
             issues = data["data"]["repository"]["issues"]["nodes"]
             issue_list = []
+            color_hash = {
+                "CLOSED" => [248, 81, 73],
+                "OPEN" => [135, 195, 138]
+            }
             issues.each do |is|
                 author = is["author"]
                 if author
@@ -221,6 +229,7 @@ module Sorter
                 else
                     author = "null"
                 end
+                _state = is["state"]
                 issue_list << [
                     Table::HyperLinkItem.new("Link", is["url"]),
                     author,
@@ -229,14 +238,14 @@ module Sorter
                     Utils::humanize_time(is["publishedAt"]),
                     Utils::humanize_time(is["lastEditedAt"]),
                     Utils::humanize_time(is["updatedAt"]),
-                    is["state"]
+                    Table::Foreground.new(_state, *color_hash[_state])
                 ]
             end
             [headers, issue_list]
         end
 
         def get_query
-            first, orderBy, direction, after = get_query_variables
+            owner, name, first, orderBy, direction, after = get_query_variables
             return <<-GRAPHQL
             { 
                 repository(owner:"#{owner}", name:"#{name}") {
@@ -268,6 +277,11 @@ module Sorter
             headers = ["Link", "Author", "Created at", "Additions", "Deletions", "Changed files", "Comments", "State", "Updated at"]
             prs = data["data"]["repository"]["pullRequests"]["nodes"]
             pr_list = []
+            color_hash = {
+                "MERGED" => [163, 113, 247],
+                "CLOSED" => [248, 81, 73],
+                "OPEN" => [135, 195, 138]
+            }
             prs.each do |pr|
                 author = pr["author"]
                 if author
@@ -275,13 +289,14 @@ module Sorter
                 else
                     author = "null"
                 end
+                _state = pr["state"]
                 pr_list << [
                     Table::HyperLinkItem.new("Link", pr["url"]),
                     author,
                     Utils::humanize_time(pr["createdAt"]), pr["additions"].to_s,
                     pr["deletions"].to_s, pr["changedFiles"].to_s,
                     pr["comments"]["totalCount"].to_s,
-                    pr["state"],
+                    Table::Foreground.new(_state, *color_hash[_state]),
                     Utils::humanize_time(pr["updatedAt"])
                 ]
             end
@@ -289,7 +304,7 @@ module Sorter
         end
 
         def get_query
-            first, orderBy, direction, after = get_query_variables
+            owner, name, first, orderBy, direction, after = get_query_variables
             return <<-GRAPHQL
             {
                 repository(owner: "#{owner}", name: "#{name}") {
@@ -393,7 +408,7 @@ module Sorter
                     lang = _lang[0]["name"].to_s
                 end
                 repo_list << [
-                    Table::HyperLinkItem.new("Link", repo["url"]), repo["name"],
+                    Table::HyperLinkItem.new("Link", repo["url"]), rname,
                     lang,
                     repo["stargazerCount"].to_s, repo["openIssues"]["totalCount"].to_s,
                     repo["forkCount"].to_s, Utils::to_filesize(repo["diskUsage"].to_i * 1024).to_s, 

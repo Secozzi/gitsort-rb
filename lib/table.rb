@@ -51,12 +51,21 @@ module Table
     end
 
 
-    # Class to create text with bakground color
+    # Class to create text with background color
     class BackgroundColor < FancyItem
         def initialize(title, r, g, b)
             super(title, "48;2;#{r};#{g};#{b}")
         end
     end
+
+
+    # Class to create text with foreground color
+    class Foreground < FancyItem
+        def initialize(title, r, g, b)
+            super(title, "38;2;#{r};#{g};#{b}")
+        end
+    end
+
 
     # Class to create a clickable hyperlink with
     # different title than the link
@@ -194,6 +203,10 @@ module Table
                     _item = item.to_s
                     constrain_space = 1
                 end
+                # Nested ansi escape codes
+                if _item.end_with?("\033[0m") and show_bg == 1
+                    _item.delete_suffix!("\033[0m")
+                end
                 spacing = (@col_sizes[index] - @constraints[index] * constrain_space - item.length + 1)
                 if constrain_space == 0
                     spacing -= (@col_sizes[index] - item.length)
@@ -204,6 +217,8 @@ module Table
                     " " * spacing + # Spacing
                     @rt * show_bg # Reset
                 )
+
+                #p "ITEM: #{(@bg * show_bg + " " + _item + " " * spacing + @rt * show_bg)}"
             end
             "#{edge}" + output.join("#{edge}") + "#{edge}"
         end
