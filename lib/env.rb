@@ -2,6 +2,14 @@ module Env
     # Path of .env file
     ENV_PATH = "./lib/.env"
 
+    # Check if .env file exists. If not, create it
+    def self.init
+        unless File.file?(ENV_PATH)
+            f = File.new(ENV_PATH, "w")
+            f.close
+        end
+    end
+
     # Checks if an entry exists for a key
     #
     # @param [String] key Key to be checked

@@ -85,12 +85,16 @@ class BaseSorter
     end
 
     # Return the data to be displayed in the table from the graphql response.
+    # Base class checks if any errors is present and exits accordingly.
     #
     # @param [String] data The data given from the GraphQL response
     # @param [Array] Array containing each headers, items and optionally
     # the masters to be given to the table
     def get_data(data)
-        raise "NotImplemented"
+        if data.key?("errors")
+            puts Table::Foreground.new("ERROR: ", 248, 81, 73).to_s + data["errors"][0]["message"]
+            exit(1)
+        end
     end
 
     # Fetches data from graphql.
@@ -144,6 +148,7 @@ end
 module Sorter
     class ForkSorter < BaseSorter
         def get_data(data)
+            super(data)
             headers = ["Link", "Owner", "Name", "Stars", "Open issues", "Fork count", "Watchers", "Size", "Last updated"]
             mr = data["data"]["repository"]
             forks = data["data"]["repository"]["forks"]["nodes"]
@@ -215,6 +220,7 @@ module Sorter
 
     class IssuesSorter < BaseSorter
         def get_data(data)
+            super(data)
             headers = ["Link", "Author", "Participants", "Comment count", "Published at", "Last edit", "Updated at", "State"]
             issues = data["data"]["repository"]["issues"]["nodes"]
             issue_list = []
@@ -274,6 +280,7 @@ module Sorter
 
     class PullReqSorter < BaseSorter
         def get_data(data)
+            super(data)
             headers = ["Link", "Author", "Created at", "Additions", "Deletions", "Changed files", "Comments", "State", "Updated at"]
             prs = data["data"]["repository"]["pullRequests"]["nodes"]
             pr_list = []
@@ -397,6 +404,7 @@ module Sorter
         end
 
         def get_data(data, type)
+            super(data)
             headers = ["Link", "Repo Name", "Language", "Stars", "Open issues", "Fork count", "Size", "Last push"]
             repos = data["data"][type]["repositories"]["nodes"]
             repo_list = []

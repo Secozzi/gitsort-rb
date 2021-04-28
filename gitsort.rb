@@ -3,6 +3,9 @@ require_relative "lib/sorters"
 require_relative "lib/env"
 
 
+Env::init
+
+
 sorters = {
     "repos" => Sorter::RepositoriesSorter,
     "forks" => Sorter::ForkSorter,

@@ -119,7 +119,8 @@ module Table
 
             @constraints = []
 
-            @bg = "\033[48;2;62;71;86m"
+            background_rgb = [62, 71, 86]
+            @bg = "\033[48;2;#{background_rgb.join(';')}m"
             @rt = "\033[0m"
             @previous_length = 0
         end

@@ -95,7 +95,7 @@ HELP
         end
 
         issues_opts = OptionParser.new do |opts|
-            if commands[args[0]] == "issues"
+            unless (args & ["issues", "i"]).empty?
                 options[:sort] = "COMMENTS"
             end
 
@@ -157,7 +157,7 @@ HELP
         end
 
         pr_opts = OptionParser.new do |opts|
-            if commands[args[0]] == "pull_requests"
+            unless (args & ["pull_requests", "pr", "p"]).empty?
                 options[:sort] = "COMMENTS"
             end
 
