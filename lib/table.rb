@@ -49,6 +49,8 @@ module Table
             "\033[#{@args}m#{@title}\033[0m"
         end
     end
+    # TODO: Maybe add function add_args() then when to_s is called append the \e[0m
+    # to solve the issue with nested reset codes. But it works so ¯\_(ツ)_/¯
 
 
     # Class to create text with background color

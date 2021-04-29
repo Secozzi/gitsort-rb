@@ -281,6 +281,10 @@ module Sorter
         end
     end
 
+    class GistSorter < BaseSorter
+        def get_data(data) ; end
+        def get_query ; end
+    end
 
     class PullReqSorter < BaseSorter
         def get_data(data)
