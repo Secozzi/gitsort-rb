@@ -27,7 +27,7 @@ module Table
         # @title String the string to be displayed
         def initialize(title, args)
             @title = title
-            @args = args
+            @args  = args
         end
 
         # Returns the size of the displayed string
@@ -72,7 +72,7 @@ module Table
     class HyperLinkItem < FancyItem
         def initialize(title, link)
             @title = title
-            @link = link
+            @link  = link
         end
 
         def constrain(amount)
@@ -84,6 +84,7 @@ module Table
         end
     end
     
+
     String.prepend(Module.new do 
         # Removes the last `amount` number of characters
         # and adds an ellipsis
@@ -104,12 +105,12 @@ module Table
         # a master row, which sits on top the items with underscores
         # except the first, which is a link
         def initialize(headings, items, master = nil)
-            @width = Table::winsize[1]
-            @headings = headings
-            @items = items
-            @master = master
-            @col_sizes = [0] * @headings.length
-            @borders = {
+            @width      = Table::winsize[1]
+            @headings   = headings
+            @items      = items
+            @master     = master
+            @col_sizes  = [0] * @headings.length
+            @borders    = {
                 tl: "┌", h: "─", tm: "┬", tr: "┐",
                 e:  "│", l: "├", r: "┤", m: "┼",
                 bl: "└", bm: "┴", br: "┘",
@@ -117,11 +118,11 @@ module Table
                 he: "┃", hl: "┡", hr: "┩", hm: "╇"
             }
 
-            @constraints = []
+            @constraints     = []
 
-            background_rgb = [62, 71, 86]
-            @bg = "\033[48;2;#{background_rgb.join(';')}m"
-            @rt = "\033[0m"
+            background_rgb   = [62, 71, 86]
+            @bg              = "\033[48;2;#{background_rgb.join(';')}m"
+            @rt              = "\033[0m"
             @previous_length = 0
         end
 
@@ -149,11 +150,7 @@ module Table
         # @param [Integer] start Start index of items
         # @param [Integer] no_of_rows Number of items retrieved
         private def get_col(index, start, no_of_rows)
-            if @master
-                top = [@headings] + [@master]
-            else
-                top = [@headings]
-            end
+            top = @master ? [@headings] + [@master] : [@headings]
             (top+@items[start...start + no_of_rows]).map {|row| row[index]}
         end
 
@@ -214,9 +211,9 @@ module Table
                 end
                 output << (
                     @bg * show_bg + # Show bg
-                    " " + _item + # Item
+                    " " + _item   + # Item
                     " " * spacing + # Spacing
-                    @rt * show_bg # Reset
+                    @rt * show_bg   # Reset
                 )
             end
             "#{edge}" + output.join("#{edge}") + "#{edge}"

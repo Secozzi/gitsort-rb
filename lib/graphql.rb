@@ -4,8 +4,8 @@ class GraphQL
     # @param [String] query The query to be retireved
     # @param [String] token Your personal Github access token
     def initialize(query, token)
-        @query = query
-        @token = token
+        @query      = query
+        @token      = token
         @rate_limit = nil
     end
 
@@ -25,6 +25,7 @@ class GraphQL
         res = https.request(req)
         json = JSON.parse(res.body)
         @rate_limit = res["X-RateLimit-Remaining"]
+
         return json
     end
 

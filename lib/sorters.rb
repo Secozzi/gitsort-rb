@@ -8,6 +8,7 @@ require "net/https"
 require "date"
 require "json"
 
+
 # Baseclass for sorters
 class BaseSorter
     # Initialize the sorter
@@ -16,13 +17,13 @@ class BaseSorter
     # @param [Hash] options Options parsed by optparser
     # @param [String] token Your personal github access token
     def initialize(url, options, token)
-        @url = url
-        @options = options
-        @token = token
-        @per_page = options[:page]
+        @url        = url
+        @options    = options
+        @token      = token
+        @per_page   = options[:page]
 
-        @table = nil
-        @data = nil
+        @table      = nil
+        @data       = nil
         @rate_limit = nil
     end
 
@@ -32,14 +33,15 @@ class BaseSorter
     #   - https://github.com/user/repo.git
     #   - git@github.com:user/repo.git
     #   - user
+    #   - user/repo
     #   - user/repo/whatever
     #
     # @return [Array] Array of user and repo or just user
     def get_url_info
-        is_link = /^(git(hub)?|https?)/
-        is_git_path = /^[a-zA-Z0-9\-_.]+\/[a-zA-Z0-9\-_.]+/
-        git_url_regex = /^(https|git)?(:\/\/|@)?([^\/:]+)[\/:](?<owner>[^\/:]+)\/(?<name>.+)(.git)?$/
-        is_git_repo = /((.git)|\/)$/
+        is_link           = /^(git(hub)?|https?)/
+        is_git_path       = /^[a-zA-Z0-9\-_.]+\/[a-zA-Z0-9\-_.]+/
+        git_url_regex     = /^(https|git)?(:\/\/|@)?([^\/:]+)[\/:](?<owner>[^\/:]+)\/(?<name>.+)(.git)?$/
+        is_git_repo       = /((.git)|\/)$/
         is_valid_username = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i
 
         if (is_link =~ @url).nil?
@@ -64,6 +66,7 @@ class BaseSorter
     end
 
     # Returns variablies often used for a graphql query
+    #
     # @return [Array] Returns options
     def get_query_variables
         owner, name = get_url_info
@@ -79,6 +82,7 @@ class BaseSorter
     end
 
     # Return the query from the options given by optparse
+    #
     # @return [String] The graphql query as a string
     def get_query
         raise "NotImplemented"
@@ -253,7 +257,7 @@ module Sorter
         def get_query
             owner, name, first, orderBy, direction, after = get_query_variables
             return <<-GRAPHQL
-            { 
+            {
                 repository(owner:"#{owner}", name:"#{name}") {
                 issues(
                     first: #{first}

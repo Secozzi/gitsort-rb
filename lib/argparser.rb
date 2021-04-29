@@ -16,20 +16,20 @@ class SortParser
 
         commands = Hash.new "invalid_command"
         command_list = {
-            "repositories" => "repos",
-            "repos" => "repos",
-            "r" => "repos",
-            "forks" => "forks",
-            "fork" => "forks",
-            "f" => "forks",
-            "issues" => "issues",
-            "i" => "issues",
+            "repositories"  => "repos",
+            "repos"         => "repos",
+            "r"             => "repos",
+            "forks"         => "forks",
+            "fork"          => "forks",
+            "f"             => "forks",
+            "issues"        => "issues",
+            "i"             => "issues",
             "pull_requests" => "pull_requests",
-            "pr" => "pull_requests",
-            "p" => "pull_requests",
-            "set-token" => "token",
-            "token" => "token",
-            "t" => "token"
+            "pr"            => "pull_requests",
+            "p"             => "pull_requests",
+            "set-token"     => "token",
+            "token"         => "token",
+            "t"             => "token"
         }
         commands.merge! command_list
 
@@ -233,11 +233,11 @@ HELP
         end
 
         subcommands = {
-            "repos" => repo_opts,
-            "forks" => fork_opts,
-            "issues" => issues_opts,
+            "repos"         => repo_opts,
+            "forks"         => fork_opts,
+            "issues"        => issues_opts,
             "pull_requests" => pr_opts,
-            "token" => token_opts
+            "token"         => token_opts
         }
 
         global.order!

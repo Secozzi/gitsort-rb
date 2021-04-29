@@ -31,11 +31,11 @@ module Utils
     # @return [String] Formatted size
     def self.to_filesize(num)
         {
-            'B'  => 1024 ** 1,
-            'KB' => 1024 ** 2,
-            'MB' => 1024 ** 3,
-            'GB' => 1024 ** 4,
-            'TB' => 1024 ** 5
+            "B"  => 1024 ** 1,
+            "KB" => 1024 ** 2,
+            "MB" => 1024 ** 3,
+            "GB" => 1024 ** 4,
+            "TB" => 1024 ** 5
         }.each_pair do |e, s|
             return "#{(num.to_f / (s / 1024)).round(2)} #{e}" if num < s 
         end
