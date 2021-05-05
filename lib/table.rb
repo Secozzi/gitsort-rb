@@ -49,8 +49,9 @@ module Table
             "\033[#{@args}m#{@title}\033[0m"
         end
     end
-    # TODO: Maybe add function add_args() then when to_s is called append the \e[0m
-    # to solve the issue with nested reset codes. But it works so ¯\_(ツ)_/¯
+    # TODO: Maybe add function add_args() that prepends \033[#{args}, 
+    # then when to_s is called append the \e[0m to solve the issue 
+    # with nested reset codes.
 
 
     # Class to create text with background color
@@ -112,6 +113,10 @@ module Table
             @items      = items
             @master     = master
             @col_sizes  = [0] * @headings.length
+
+            # TODO: Maybe split up soft and hard into different
+            # hashmaps but with the same keys so it's eaiser to
+            # Switch between the two and eventually more styles
             @borders    = {
                 tl: "┌", h: "─", tm: "┬", tr: "┐",
                 e:  "│", l: "├", r: "┤", m: "┼",
@@ -122,6 +127,7 @@ module Table
 
             @constraints     = []
 
+            # TODO: Maybe put as enviroment variable?
             background_rgb   = [62, 71, 86]
             @bg              = "\033[48;2;#{background_rgb.join(';')}m"
             @rt              = "\033[0m"
@@ -212,10 +218,10 @@ module Table
                     spacing -= (@col_sizes[index] - item.length)
                 end
                 output << (
-                    @bg * show_bg + # Show bg
+                    @bg * show_bg + # Background color
                     " " + _item   + # Item
                     " " * spacing + # Spacing
-                    @rt * show_bg   # Reset
+                    @rt * show_bg   # Reset mode
                 )
             end
             "#{edge}" + output.join("#{edge}") + "#{edge}"
@@ -248,10 +254,11 @@ module Table
                 @borders[:hh]
             )
 
-            # Master items, top of the array which has underscores
+            # Master items, top of the array which has underscores.
+            # The first two items are always links and doesn't need underscores.
             if @master
                 out_arr << get_middle(
-                    @master.drop(1).map {|s| FancyItem.new(s, "4")}.unshift(@master[0])
+                    @master.drop(2).map {|s| FancyItem.new(s, "4")}.unshift(@master[0], @master[1])
                 )
             end
 

@@ -122,7 +122,7 @@ class BaseSorter
 
     # Start the main loop
     def start
-        # First render of table
+        # Initial render of table
         @table.render(0, @per_page)
         rate_limit = @rate_limit
         table_width = @table.total_width
@@ -160,17 +160,32 @@ module Sorter
             forks_list = []
     
             forks.each do |fork|
+                owner = fork["owner"]
+                if owner
+                    owner = Table::HyperLinkItem.new(owner["login"], owner["url"])
+                else
+                    owner = "null"
+                end
                 forks_list << [
-                    Table::HyperLinkItem.new("Link", fork["url"]), *fork["nameWithOwner"].split("/"),
+                    Table::HyperLinkItem.new("Link", fork["url"]), owner, fork["name"],
                     fork["stargazerCount"].to_s, fork["openIssues"]["totalCount"].to_s,
                     fork["forkCount"].to_s, fork["watchers"]["totalCount"].to_s,
                     Utils::to_filesize(fork["diskUsage"].to_i * 1024).to_s, 
                     Utils::humanize_time(fork["updatedAt"])
                 ]
             end
+
+            owner = mr["owner"]
+            if owner
+                owner = Table::HyperLinkItem.new(owner["login"], owner["url"])
+            else
+                owner = "null"
+            end
+
+            puts "MASTER OWNER: #{owner}"
     
             master_list = [
-                Table::HyperLinkItem.new("Link", mr["url"]), *mr["nameWithOwner"].split("/"),
+                Table::HyperLinkItem.new("Link", mr["url"]), owner, mr["name"],
                 mr["stargazerCount"].to_s, mr["openIssues"]["totalCount"].to_s,
                 mr["forkCount"].to_s, mr["watchers"]["totalCount"].to_s,
                 Utils::to_filesize(mr["diskUsage"].to_i * 1024).to_s, 
@@ -186,7 +201,8 @@ module Sorter
             {
                 repository(owner: "#{owner}", name: "#{name}") {
                     url
-                    nameWithOwner
+                    owner { login url }
+                    name
                     stargazerCount
                     openIssues:issues(states:OPEN) {
                         totalCount
@@ -205,7 +221,8 @@ module Sorter
                         totalCount
                         nodes{
                             url
-                            nameWithOwner
+                            owner { login url }
+                            name
                             stargazerCount
                             openIssues:issues(states:OPEN) {
                                 totalCount
@@ -236,7 +253,7 @@ module Sorter
             issues.each do |is|
                 author = is["author"]
                 if author
-                    author = Table::HyperLinkItem.new(is["author"]["login"], is["author"]["url"])
+                    author = Table::HyperLinkItem.new(author["login"], author["url"])
                 else
                     author = "null"
                 end
