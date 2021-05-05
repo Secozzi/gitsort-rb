@@ -16,11 +16,12 @@ class BaseSorter
     # @param [String] url User input
     # @param [Hash] options Options parsed by optparser
     # @param [String] token Your personal github access token
-    def initialize(url, options, token)
+    def initialize(url, options, token, retriever = GraphQL)
         @url        = url
         @options    = options
         @token      = token
         @per_page   = options[:page]
+        @retriever  = retriever
 
         @table      = nil
         @data       = nil
@@ -107,7 +108,7 @@ class BaseSorter
     def fetch_data
         query = get_query
         owner, repo_name = get_url_info
-        g = GraphQL.new(query, @token)
+        g = @retriever.new(query, @token)
         @data = g.get_data
         @rate_limit = g.get_rate_limit
     end
